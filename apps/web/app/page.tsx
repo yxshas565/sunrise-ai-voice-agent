@@ -100,6 +100,14 @@ export default function Home() {
               Our AI design concierge will call you shortly to understand your
               project and help arrange a conversation with a Sunrise designer.
             </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <a href="/" className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-[#555] transition hover:bg-black/[0.03]">
+                Back to Home
+              </a>
+              <a href="/dashboard" className="rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black/90">
+                Dashboard
+              </a>
+            </div>
 
             <div className="mx-auto mt-10 flex max-w-md items-center gap-4 rounded-2xl border border-black/10 bg-white p-5 text-left shadow-sm">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f1f1ee]">
@@ -142,7 +150,11 @@ export default function Home() {
           <span>Residential Interiors</span>
           <span>End-to-end Design</span>
         </div>
-      </nav>
+      
+          <a href="/dashboard" className="text-sm font-medium text-[#666] transition hover:text-black">
+            Dashboard
+          </a>
+        </nav>
 
       {/* Hero */}
       <section className="relative mx-auto flex min-h-[calc(100vh-88px)] w-full max-w-7xl items-center px-6 pb-16 pt-8 lg:px-10 lg:pb-24">

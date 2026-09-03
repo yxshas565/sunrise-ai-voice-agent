@@ -98,6 +98,14 @@ export default function Dashboard() {
     <main className="min-h-screen bg-[#f7f7f5] text-[#171717]">
       <header className="border-b border-black/[0.07] bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
+            <div className="flex items-center gap-2">
+              <a
+                href="/"
+                className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-black hover:text-white"
+              >
+                New Enquiry
+              </a>
+            </div>
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#171717] text-sm font-semibold text-white">
               S

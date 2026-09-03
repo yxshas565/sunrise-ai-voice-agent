@@ -85,6 +85,7 @@ def trigger_outbound_call(phone_number: str, lead_id: str) -> dict:
         ) from exc
 
     if response.status_code >= 400:
+        print("EXOTEL ERROR:", response.status_code, response.text[:2000])
         raise HTTPException(
             status_code=502,
             detail=f"Exotel rejected the call: {response.text[:1000]}",
@@ -136,7 +137,58 @@ def map_exotel_status(status: Optional[str]) -> tuple[str, Optional[str]]:
 
 
 @router.post("/save-lead")
-async def save_lead(request: SaveLeadRequest):
+async def save_lead(request: Request):
+    raw_body = await request.body()
+
+    try:
+        payload = await request.json()
+    except Exception:
+        try:
+            form = await request.form()
+            payload = dict(form)
+        except Exception:
+            payload = {}
+
+    print("SARVAM SAVE-LEAD PAYLOAD:", payload)
+
+    if isinstance(payload, dict):
+        source = payload.get("variables", payload)
+        if not isinstance(source, dict):
+            source = payload
+    else:
+        source = {}
+
+    # Sarvam may send literal @variable placeholders when variables
+    # are not resolved in an HTTP tool body. Ignore those placeholders.
+    source = {
+        key: (
+            None
+            if isinstance(value, str) and value.strip().startswith("@")
+            else value
+        )
+        for key, value in source.items()
+    }
+
+    class ParsedLead:
+        phone_number = source.get("phone_number")
+        project_type = source.get("project_type")
+        timeline = source.get("timeline")
+        preferred_language = source.get("preferred_language")
+
+        meeting_requested = source.get("meeting_requested", False)
+        meeting_confirmed = source.get("meeting_confirmed", False)
+
+    request = ParsedLead()
+
+    # Sarvam may return unresolved @variable placeholders from
+    # HTTP tool bodies. Treat those placeholders as missing values.
+    for field in ("phone_number", "project_type", "timeline", "preferred_language", "meeting_requested", "meeting_confirmed"):
+        value = getattr(request, field, None)
+        if isinstance(value, str) and value.startswith("@"):
+            setattr(request, field, None)
+
+    # The outbound lead was already created before the call.
+    # If Sarvam does not return a phone number, use the newest lead.
     normalized_phone = None
 
     if request.phone_number:
@@ -271,3 +323,5 @@ async def exotel_status(request: Request):
         "updated": updated_lead is not None,
         "status": product_status,
     }
+
+

@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
@@ -132,8 +132,8 @@ def create_lead(request: CreateLeadRequest) -> dict:
                 lead["projectType"],
                 lead["timeline"],
                 lead["preferredLanguage"],
-                int(lead["meetingRequested"]),
-                int(lead["meetingConfirmed"]),
+                1 if str(lead["meetingRequested"]).strip().lower() in ("1", "true", "yes", "y", "on") else 0,
+                1 if str(lead["meetingConfirmed"]).strip().lower() in ("1", "true", "yes", "y", "on") else 0,
                 lead["callOutcome"],
                 lead["status"],
                 lead["callStatus"],
@@ -270,8 +270,8 @@ def update_lead_by_phone(
                 lead["projectType"],
                 lead["timeline"],
                 lead["preferredLanguage"],
-                int(lead["meetingRequested"]),
-                int(lead["meetingConfirmed"]),
+                1 if str(lead["meetingRequested"]).strip().lower() in ("1", "true", "yes", "y", "on") else 0,
+                1 if str(lead["meetingConfirmed"]).strip().lower() in ("1", "true", "yes", "y", "on") else 0,
                 lead["callOutcome"],
                 lead["status"],
                 lead["callStatus"],
@@ -465,3 +465,4 @@ def get_lead_stats() -> dict:
 
 
 init_db()
+
