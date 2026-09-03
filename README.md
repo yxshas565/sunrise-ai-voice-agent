@@ -1,366 +1,569 @@
-﻿# Sunrise Interiors - AI Voice Lead Agent
+﻿# Sunrise Interiors — AI Voice Lead Concierge
 
-A production-oriented live voice qualification system for Sunrise Interiors.
+> An end-to-end conversational AI voice agent that instantly calls prospective interior-design customers, naturally qualifies their requirements in English, Hindi, and Hinglish, and automatically converts the conversation into a structured lead for the Sunrise Interiors sales/design team.
 
-Visitors submit their phone number on the website and receive an outbound AI call within seconds. The agent introduces itself, checks whether it is a good time to talk, understands the interior-work requirement, captures the expected start timeline, and offers a designer consultation.
+---
 
-## What it demonstrates
+## Overview
 
-- Real outbound phone calls
-- Natural conversational AI voice
-- English, Hindi, and Hinglish conversations
-- Interruption-aware conversations
-- Lead qualification
-- Structured extraction of project requirements
-- Designer-meeting intent capture
-- Exotel call lifecycle tracking
-- Call recordings
-- Live lead dashboard
-- Automatic lead updates after the conversation
+Sunrise Interiors receives prospective customers through a website enquiry form. Instead of leaving the sales team with a phone number and requiring a manual follow-up, this project creates an immediate conversational voice experience.
 
-## Architecture
+The workflow is:
 
-`	ext
-Visitor
-   |
-   v
-Next.js Landing Page
-   |
-   | POST /api/leads
-   v
-FastAPI Backend
-   |
-   +------------------> SQLite Lead Store
-   |
-   +------------------> Exotel
-                           |
-                           v
-                    Sarvam Voice Agent
-                    STT -> LLM -> TTS
-                           |
-                           +--> Lead extraction
-                           |
-                           +--> /api/voice/save-lead
-                           |
-                           +--> Exotel status callback
-                                      |
-                                      v
-                              FastAPI Backend
-                                      |
-                                      v
-                              Lead + call status
-                                      |
-                                      v
-                              Next.js Dashboard
-Project structure
-sunrise-ai-voice-agent/
-├── apps/
-│   ├── api/                 # FastAPI backend
-│   │   ├── app/
-│   │   │   ├── api/
-│   │   │   └── services/
-│   │   ├── data/
-│   │   ├── .env
-│   │   └── pyproject.toml
-│   │
-│   └── web/                 # Next.js frontend
-│       └── app/
-│
-├── packages/
-├── .env.example
-├── package.json
-├── pnpm-workspace.yaml
-└── README.md
-Tech stack
-Frontend
-Next.js
-React
-TypeScript
-Tailwind CSS
-Backend
-FastAPI
-Python
-Pydantic
-SQLite
-Voice infrastructure
-Sarvam Voice Agents
-Sarvam STT / LLM / TTS
-Exotel telephony
-ngrok for local callback tunnelling
-Conversation flow
+```text
+Visitor enters phone number
+          ↓
+Next.js website
+          ↓
+FastAPI Lead API
+          ↓
+Exotel outbound call
+          ↓
+Sarvam Voice Agent
+          ↓
+Natural conversation with customer
+          ↓
+Extract project requirements
+          ↓
+Extract timeline
+          ↓
+Detect conversation language
+          ↓
+Determine designer-meeting interest
+          ↓
+Sarvam on-end webhook
+          ↓
+FastAPI webhook
+          ↓
+SQLite lead database
+          ↓
+Sunrise Interiors dashboard
 
-The agent follows a short qualification flow:
+The system is designed around one primary principle:
 
-introduces itself as calling from Sunrise Interiors.
-Checks whether it is a good time for a quick conversation.
-Understands what interior work the visitor needs.
-Asks when they would like to start.
-Offers a conversation with a Sunrise Interiors designer.
-Captures whether the visitor agrees.
-Extracts structured lead information.
-Updates the lead record and call lifecycle.
-Stores the Exotel recording when available.
+The customer should feel like they are speaking with a helpful design concierge, not interacting with an IVR system.
 
-The agent is configured for natural English, Hindi, and Hinglish interaction rather than a rigid IVR-style menu.
+The implementation focuses on conversational quality, Indian-language support, low latency, reliable lead capture, and a complete website → phone call → structured lead workflow.
 
-Local setup
-Prerequisites
-Node.js
-pnpm
-Python
-uv
-A Sarvam account/API key
-An Exotel account with an ExoPhone and voice application
-ngrok for local public callbacks
-Install frontend dependencies
+Product Experience
 
-From the repository root:
+A prospective customer visits the Sunrise Interiors website and enters their phone number.
 
-pnpm install
-Configure API environment
+The system immediately initiates an outbound call.
 
-Copy the example configuration:
+The AI introduces itself as Shubh from Sunrise Interiors, checks whether the customer has a moment, and naturally discovers:
 
-Copy-Item .env.example apps/api/.env
+What interior work they need
+Which parts of the home they want to work on
+When they expect to start
+Whether they would like to speak with a designer
 
-Then fill in the required credentials:
+The agent supports:
 
-SARVAM_API_KEY=
+English
+Hindi
+Hinglish / code-mixed conversation
+Natural language switching
+Interruptions
+Short acknowledgements
+Normal conversational variation
+Polite rejection / not-interested responses
 
-EXOTEL_ACCOUNT_SID=
-EXOTEL_API_KEY=
-EXOTEL_API_TOKEN=
-EXOTEL_SUBDOMAIN=https://api.in.exotel.com
-EXOTEL_CALLER_ID=
-EXOTEL_APP_ID=
+Once the conversation ends, the extracted information is automatically sent back to the backend and stored as a structured lead.
 
-PUBLIC_API_URL=
+Key Features
+1. Instant Outbound Calling
 
-Never commit apps/api/.env.
+The customer does not need to manually call a sales number.
 
-Start the API
-cd apps/api
-uv run uvicorn app.main:app --reload --port 8000
+Submitting their phone number triggers the outbound workflow:
 
-API health check:
+Website → FastAPI → Exotel → Sarvam Voice Agent → Customer
 
-http://127.0.0.1:8000/health
-Start the web app
+This creates an immediate follow-up experience while the customer's intent is still fresh.
 
-In another terminal:
+2. Natural Conversational Voice AI
 
-pnpm --dir apps/web dev
+The voice agent is intentionally designed to avoid the typical IVR experience.
 
-Open:
+Instead of:
 
-http://localhost:3000
+"Press 1 for..."
 
-Dashboard:
+the agent uses short conversational turns such as:
 
-http://localhost:3000/dashboard
-Public callback URL
+"Hi, this is Shubh calling from Sunrise Interiors. Is this a good time for a quick minute?"
 
-Because Exotel and Sarvam need to reach the local FastAPI application, expose port 8000 through ngrok:
+The agent asks one question at a time and adapts to the customer's responses.
 
-ngrok http 8000
+3. English, Hindi and Hinglish
 
-Set the generated HTTPS URL as:
+Indian customers do not necessarily speak in one language throughout a conversation.
 
-PUBLIC_API_URL=https://your-ngrok-domain
+A customer might begin in English:
 
-The public URL is used for:
+"I'm looking for interiors for my 2BHK."
 
-Exotel call status callbacks
-Sarvam lead extraction tool callbacks
-Production build
+and naturally switch to Hinglish:
 
-Frontend validation:
+"Haan, kitchen aur living room mainly karwana hai."
 
-pnpm --dir apps/web build
+The voice agent is configured to detect and follow the customer's actual conversational language rather than forcing the user through a website language selector.
 
-The production build should complete without TypeScript or compilation errors.
+This was an intentional design decision:
 
-Lead data captured
+Language adaptation belongs inside the conversation rather than being another form field for the customer to manage.
 
-Each lead can contain:
+4. Interruption Handling
+
+Voice conversations are fundamentally different from text chat.
+
+Customers may interrupt, respond early, hesitate, or speak while the agent is talking.
+
+The agent is therefore configured with interruption handling and conversational eagerness rather than requiring strict turn-by-turn scripted responses.
+
+The goal is a natural exchange rather than a deterministic call tree.
+
+5. Intelligent Lead Qualification
+
+The conversation extracts structured information from an otherwise unstructured voice interaction.
+
+The current output variables include:
+
+project_type
+
+The customer's latest and most specific interior requirement.
+
+Examples:
+
+living room and kitchen renovation
+
+or:
+
+Complete 2BHK interiors including kitchen and living room
+
+Multiple areas are preserved rather than forcing the customer into a single category.
+
+timeline
+
+The customer's intended project timeline.
+
+Examples:
+
+Next month
+Two-three months later
+
+The system preserves the meaning of the customer's answer instead of reducing it to an arbitrary fixed category.
+
+preferred_language
+
+The language predominantly used by the customer:
+
+English
+Hindi
+Hinglish
+
+This is derived from the actual conversation.
+
+meeting_requested
+
+A boolean qualification signal indicating whether the customer explicitly agreed to speak with a Sunrise Interiors designer.
+
+true
+false
+
+This allows the sales/design team to immediately distinguish interested leads from uninterested conversations.
+
+6. Designer Meeting Qualification
+
+The agent asks whether the customer would like to speak with a designer.
+
+If the customer agrees:
+
+meeting_requested = true
+status = qualified
+
+If the customer declines:
+
+meeting_requested = false
+status = completed
+
+The agent is explicitly instructed not to continue unnecessary qualification after the meeting decision.
+
+This keeps the conversation short and respectful.
+
+7. Automatic Lead Persistence
+
+Extracted information is sent to the backend when the conversation ends.
+
+The FastAPI application receives the structured information and updates the corresponding lead.
+
+The lead is persisted in SQLite.
+
+This means the system is not merely a voice demo—the call produces an actual structured business record.
+
+8. Live Dashboard
+
+The dashboard provides a simple operational view of captured leads.
+
+It displays information such as:
 
 Phone number
 Project requirement
-Expected start timeline
-Preferred language
-Meeting requested
-Meeting confirmed
-Call outcome
+Timeline
+Conversation language
+Lead status
+Designer meeting interest
 Call status
-Exotel call SID
-Recording URL
-Created / updated timestamps
-Cost
-
-The implementation is designed around a short 60–90 second qualification call.
-
-The major cost components are:
-
-Telephony through Exotel
-Sarvam voice-agent infrastructure
-Speech recognition
-LLM inference
-Speech synthesis
-
-Actual per-minute cost depends on the selected telephony plan and Sarvam configuration. The target is to keep the combined call cost within the assignment's Rs. 2-3/min target where possible, with Rs. 5-6/min treated as an acceptable upper range for a higher-quality demo.
-
-Reliability considerations
-
-The backend separates:
-
-Lead lifecycle status
-Call lifecycle status
 Call outcome
+Recording information where available
 
-This prevents a lead from being incorrectly marked as qualified merely because an outbound call was initiated.
+Example workflow:
 
-Exotel status callbacks are used to update call state such as:
-
-Calling
-Ringing
-In progress
-Completed
-Busy
-Failed
-No answer
-
-Sarvam's post-call extraction is used to persist structured conversation information.
-
-Security
-
-Secrets are kept in environment variables.
-
-Do not commit:
-
-apps/api/.env
-
-The repository contains .env.example with empty placeholders only.
-
-Demo
-
-The intended demo flow is:
-
-Open the Sunrise Interiors landing page.
-Enter a visitor phone number.
-Submit the enquiry.
-Show the outbound call arriving.
-Have a short natural conversation with the AI.
-Provide project requirements and timeline.
-Accept or decline the designer consultation.
-Show the resulting structured lead in the dashboard.
-
-The dashboard refreshes automatically so call and lead state can be observed without manually refreshing the page.
-
-
-
-## Architecture
-
-`	ext
-Visitor
-   |
-   v
-Sunrise Interiors Web App
-   |
-   | POST /api/leads
-   v
-FastAPI Backend
-   |
-   +--> SQLite Lead Store
-   |
-   +--> Exotel Outbound Call
-            |
-            v
-       Sarvam Voice Agent
-            |
-            +--> Speech recognition
-            +--> Hindi / Hinglish / English understanding
-            +--> Natural Indian voice response
-            +--> Lead qualification
-            +--> Designer consultation intent
-            |
-            +--> save_lead_details
-                     |
-                     v
-              FastAPI /api/voice/save-lead
-   |
-   +--> Exotel status callback
-   |
-   +--> Recording URL
-   |
-   v
+Customer conversation
+        ↓
+AI extraction
+        ↓
+Structured lead
+        ↓
 Dashboard
-Lead Qualification
+Architecture
+High-Level Architecture
+                         ┌─────────────────────┐
+                         │   Sunrise Website   │
+                         │     Next.js         │
+                         └──────────┬──────────┘
+                                    │
+                              POST /api/leads
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │      FastAPI        │
+                         │      Backend        │
+                         └──────────┬──────────┘
+                                    │
+                              Outbound Call
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │       Exotel        │
+                         │    Telephony Layer  │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │ Sarvam Voice Agent  │
+                         │ Conversational AI    │
+                         └──────────┬──────────┘
+                                    │
+                           Natural conversation
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │ Extracted Variables │
+                         │ project_type        │
+                         │ timeline             │
+                         │ language             │
+                         │ meeting_requested    │
+                         └──────────┬──────────┘
+                                    │
+                             On-end webhook
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │      FastAPI        │
+                         │  /api/voice/save-   │
+                         │       lead          │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │       SQLite        │
+                         │    Lead Storage     │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │      Dashboard      │
+                         │      Next.js        │
+                         └─────────────────────┘
+Technology Stack
+Layer	Technology	Purpose
+Frontend	Next.js	Customer-facing website and dashboard
+UI	Tailwind CSS	Responsive interface
+Backend	FastAPI	API, webhook processing and orchestration
+Database	SQLite	Lightweight persistent lead storage
+Voice AI	Sarvam Voice Agents	Conversational Indian-language voice AI
+Telephony	Exotel	Indian outbound calling infrastructure
+Tunnelling	ngrok	Secure public webhook endpoint during local development
+Runtime	Python / Node.js	Backend and frontend execution
+Version Control	Git + GitHub	Source control and deployment-ready project history
+Why Sarvam?
 
-The agent captures:
+The core challenge is not simply generating speech.
 
-Interior work / project type
-Expected project start timeline
-Preferred language
-Designer consultation interest
-Meeting confirmation
-Call status
-Call outcome
-Recording URL
+The agent must handle:
 
-The system is designed to handle English, Hindi and Hinglish naturally rather than forcing the caller through a rigid IVR-style flow.
+Indian English
+Hindi
+Hinglish
+Code-switching
+Conversational interruptions
+Natural Indian voice interaction
+Low-latency realtime communication
 
-Why These Technologies
-Sarvam AI
+A generic STT → LLM → TTS pipeline could be assembled manually, but that would introduce additional engineering complexity across:
 
-Chosen for its Indian-language speech capabilities, natural code-mixed Hindi/Hinglish handling, telephony-oriented voice stack and low-latency voice-agent runtime.
+Audio streaming
+STT
+LLM orchestration
+Conversation state
+TTS
+Barge-in handling
+Latency management
+Telephony integration
+Language switching
+Webhooks
 
-Exotel
+Sarvam Voice Agents provides an integrated voice-agent layer designed for Indian-language conversational experiences.
 
-Chosen as the telephony layer for Indian outbound calling, caller ID, call routing, recordings and call-status callbacks.
+This makes it a better fit for the central requirement of this project than building a generic voice stack from independent components.
 
-FastAPI
+Why Exotel?
 
-Provides a lightweight API layer for lead creation, call orchestration, Sarvam tool callbacks and Exotel status callbacks.
+The project requires an actual phone call rather than a browser-only voice simulation.
 
-Next.js
+Exotel provides the telephony infrastructure needed to:
 
-Provides the public lead-capture experience and internal lead dashboard.
+Initiate outbound calls
+Connect the call to the voice agent
+Handle Indian telephone numbers
+Receive call status callbacks
+Provide recording information where configured
 
-SQLite
+The resulting architecture separates responsibilities cleanly:
 
-Used for the assignment deployment because it keeps the system simple and self-contained while still providing persistent structured lead data.
+Sarvam → Conversation intelligence
+Exotel → Telephony
+FastAPI → Business/application logic
+SQLite → Lead persistence
+Next.js → User interface
+Voice Agent Design
 
-Cost
+The agent is configured as:
 
-The target is to keep the complete voice interaction within the assignment's expected ₹2–₹3/min range where possible, with an upper acceptable range of approximately ₹5–₹6/min depending on telephony and voice-agent usage.
+Sunrise Interiors Design Concierge
 
-Sarvam Voice Agents provides a bundled agent runtime, while Exotel provides the telephony layer. Actual production cost depends on call duration, telephony plan and the selected Sarvam configuration.
+Voice persona:
 
-Demo Flow
-Open the Sunrise Interiors landing page.
-Enter a visitor phone number.
-Submit the form.
-The backend creates the lead and initiates the outbound call.
-The AI introduces itself as Sunrise Interiors.
-It checks whether the caller has a minute.
-It understands the required interior work.
-It asks when the project is expected to start.
-It offers a designer consultation.
-The captured lead information appears in the dashboard.
-Call status and recording information are retained when available.
-Production Considerations
+Shubh
 
-For a production deployment, the SQLite store can be replaced with PostgreSQL, authentication can be added to the dashboard, webhook authentication/signature verification can be enforced, and the lead/call correlation can be backed by a durable call identifier rather than phone-number matching alone.
+The agent is instructed to behave as a:
 
-Demo Credentials / Configuration
+Warm, professional AI design concierge.
 
-All credentials are supplied through environment variables.
+The conversational design follows several principles.
 
-Never commit the real .env file.
+One question at a time
 
-Copy .env.example and provide:
+The agent avoids overwhelming customers with multiple qualification questions in a single turn.
 
-SARVAM_API_KEY
+Short responses
+
+Voice responses are intentionally concise to reduce latency and make the interaction feel conversational.
+
+Natural acknowledgements
+
+The agent uses brief acknowledgements instead of immediately firing another scripted question.
+
+Customer-led language
+
+The agent follows the customer's English/Hindi/Hinglish usage.
+
+No forced script
+
+The conversation is guided by objectives rather than being implemented as a rigid decision tree.
+
+Respectful ending
+
+Once the designer-meeting decision is made, the agent closes naturally without unnecessary additional qualification.
+
+Conversation Flow
+
+A typical conversation follows this structure:
+
+1. Greeting
+      ↓
+2. Check whether it is a good time
+      ↓
+3. Discover interior work required
+      ↓
+4. Understand project timeline
+      ↓
+5. Offer designer consultation
+      ↓
+6. Capture meeting interest
+      ↓
+7. Natural closing
+      ↓
+8. Extract structured lead variables
+      ↓
+9. Send variables to backend
+      ↓
+10. Update lead
+
+The exact wording is intentionally flexible so that the interaction remains conversational.
+
+Backend API
+Create Lead
+POST /api/leads
+
+Creates a lead and initiates an outbound call.
+
+The backend:
+
+Validates the submitted phone number.
+Creates or updates the lead.
+Calls Exotel.
+Stores the Exotel call SID.
+Stores the initial call status.
+Returns the lead ID and calling state.
+Get Lead
+GET /api/leads/{lead_id}
+
+Returns the current lead information.
+
+Save Voice Lead
+POST /api/voice/save-lead
+
+Receives the structured information extracted by Sarvam after the conversation.
+
+The endpoint handles:
+
+JSON payloads
+Form payloads
+Agent variable values
+Boolean normalization
+Indian phone-number normalization
+Lead matching
+Lead qualification
+Database updates
+Exotel Status Callback
+POST /api/voice/exotel/status
+
+Receives telephony lifecycle events from Exotel.
+
+Supported states are normalized into application-level states such as:
+
+calling
+ringing
+in_progress
+completed
+call_failed
+no_answer
+
+The endpoint also captures recording information when provided by Exotel.
+
+Dashboard APIs
+GET /api/dashboard/leads
+GET /api/dashboard/stats
+
+These endpoints expose structured lead and dashboard information to the frontend.
+
+Data Flow and Lead Matching
+
+One important reliability requirement is ensuring that the voice-extracted data updates the correct website lead.
+
+The initial website submission creates the lead and associates the Exotel call with that lead.
+
+When the voice agent finishes, the extracted variables are posted to the backend.
+
+The backend normalizes the phone number when available and updates the corresponding lead.
+
+If a phone number is not included in the voice-agent payload, the backend includes a fallback to the latest lead so the extracted information is not silently discarded.
+
+Boolean Normalization
+
+Voice-agent systems can return values in different representations.
+
+For example, a boolean may arrive as:
+
+true
+
+instead of a native JSON boolean.
+
+The backend therefore explicitly normalizes values such as:
+
+1
+true
+yes
+y
+on
+
+into a boolean true.
+
+This prevents a valid designer-meeting request from being incorrectly stored as false.
+
+Phone Number Normalization
+
+Indian numbers can arrive in different forms.
+
+The backend normalizes common formats such as:
+
++917022805441
+07022805441
+7022805441
+
+into the application's canonical Indian format.
+
+This makes lead matching more reliable between the website, telephony provider and voice-agent webhook.
+
+Error Handling
+
+The backend handles failures across the outbound call flow.
+
+Examples include:
+
+Exotel connection failures
+Exotel HTTP errors
+Invalid Exotel responses
+XML parsing failures
+Missing call identifiers
+Missing voice-agent payload fields
+Unknown call statuses
+Missing matching leads
+
+If Exotel rejects an outbound call, the lead is marked appropriately rather than leaving the system in a false "calling" state.
+
+Call Status Lifecycle
+
+The application maps Exotel's telephony lifecycle into business-friendly states.
+
+queued
+   ↓
+calling
+   ↓
+ringing
+   ↓
+in_progress
+   ↓
+completed
+
+Failure paths include:
+
+busy
+failed
+no_answer
+canceled
+
+These are converted into application-level call and outcome states.
+
+Security and Configuration
+
+Secrets are not hard-coded into the source code.
+
+Environment variables are used for configuration, including:
+
 EXOTEL_ACCOUNT_SID
 EXOTEL_API_KEY
 EXOTEL_API_TOKEN
@@ -368,25 +571,813 @@ EXOTEL_SUBDOMAIN
 EXOTEL_CALLER_ID
 EXOTEL_APP_ID
 PUBLIC_API_URL
+
+A .env.example file documents the required configuration without exposing credentials.
+
+The real .env file is excluded from version control.
+
+Local Development
+Prerequisites
+
+Install:
+
+Node.js
+npm
+Python
+Git
+
+The project contains two applications:
+
+apps/
+├── api/
+└── web/
+Backend Setup
+
+Navigate to:
+
+cd apps/api
+
+Create/activate the Python environment as appropriate for your machine and install the project dependencies.
+
+The backend uses:
+
+FastAPI
+Uvicorn
+Pydantic Settings
+HTTPX
+python-multipart
+
+Start the API with:
+
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+
+Health check:
+
+GET http://127.0.0.1:8000/health
+Frontend Setup
+
+Navigate to:
+
+cd apps/web
+
+Install dependencies:
+
+npm install
+
+Start development mode:
+
+npm run dev
+
+The frontend runs on:
+
+http://localhost:3000
+Webhook Development
+
+Because Exotel and Sarvam need to reach the locally running FastAPI server, the backend is exposed using ngrok.
+
+The local backend:
+
+127.0.0.1:8000
+
+is exposed through a public HTTPS URL.
+
+Example:
+
+https://<ngrok-domain>
+
+The public API URL is configured through the environment.
+
+The relevant webhooks are:
+
+/api/voice/save-lead
+/api/voice/exotel/status
+
+For production deployment, these endpoints should be hosted on a permanent HTTPS backend rather than a development tunnel.
+
+Exotel Configuration
+
+The Exotel application connects the call through the configured voice-agent flow.
+
+Conceptually:
+
+Call Start
+    ↓
+Sarvam Voicebot
+    ↓
+Hangup
+
+The Exotel integration is responsible for initiating and transporting the telephone call.
+
+The outbound backend request supplies:
+
+Customer number
+ExoPhone caller ID
+Exotel flow URL
+Call type
+Status callback URL
+
+The resulting Exotel call SID is stored against the lead.
+
+Sarvam Configuration
+
+The Sarvam agent is configured with:
+
+Shubh voice
+English + Hindi
+Automatic language detection
+Quick language switching
+Interruptions enabled
+Conversational eagerness
+Natural Indian voice settings
+Maximum call duration
+Voice-agent output variables
+On-end lead-saving tool
+
+The voice agent extracts:
+
+project_type
+timeline
+preferred_language
+meeting_requested
+
+These variables are then sent to:
+
+POST /api/voice/save-lead
+Sarvam Output Variable Lifecycle
+
+The lead extraction follows a lifecycle rather than trying to persist every sentence during the call.
+
+Call starts
+    ↓
+Conversation happens
+    ↓
+Agent gathers information
+    ↓
+Call ends
+    ↓
+Output variables are extracted
+    ↓
+On-end hook runs
+    ↓
+Backend receives structured values
+    ↓
+Lead is updated
+
+This keeps the realtime conversation focused on the customer while allowing structured business data to be produced at the end.
+
+Database
+
+SQLite is used for the current implementation.
+
+This is appropriate for the assignment because:
+
+It is lightweight
+Requires no separate database server
+Works well for a local demonstration
+Provides persistent structured storage
+Keeps setup simple
+
+The data model stores lead information including:
+
+id
+phoneNumber
+projectType
+timeline
+preferredLanguage
+meetingRequested
+meetingConfirmed
+status
+callStatus
+callSid
+callOutcome
+recordingUrl
+createdAt
+updatedAt
+
+For a production deployment at larger scale, SQLite should be replaced with a managed relational database such as PostgreSQL.
+
+The application/service layer is already separated sufficiently that this can be done without redesigning the complete product.
+
+Frontend
+
+The frontend contains two primary experiences.
+
+Customer Website
+
+The landing page provides:
+
+Sunrise Interiors branding
+Interior design positioning
+Lead capture form
+Phone number submission
+Calling state
+Call-success state
+Navigation to the dashboard
+
+The website intentionally remains simple.
+
+The assignment prioritizes the quality of the call experience over complex visual design, so engineering effort was focused on the realtime voice workflow.
+
+Dashboard
+
+The dashboard provides a CRM-style view of captured leads.
+
+It allows the user to quickly understand:
+
+Who called?
+What do they need?
+When do they want to start?
+What language did they use?
+Are they qualified?
+Do they want a designer?
+What happened to the call?
+
+This demonstrates that the AI conversation produces actionable business information rather than merely generating speech.
+
+Production Considerations
+
+The current implementation is designed as a production-oriented prototype for the assignment.
+
+Several decisions were made specifically to keep the architecture easy to evolve.
+
+Clear separation of concerns
+Frontend
+   ↓
+API
+   ↓
+Telephony
+   ↓
+Voice AI
+   ↓
+Webhooks
+   ↓
+Persistence
+
+Each layer has a defined responsibility.
+
+Environment-based secrets
+
+Credentials are not committed to Git.
+
+Typed backend contracts
+
+FastAPI and Pydantic provide request validation and structured API responses.
+
+Persistent lead state
+
+Lead information is stored rather than remaining only in memory.
+
+Call lifecycle tracking
+
+The application records both voice-agent completion and telephony status.
+
+Production build validation
+
+The Next.js application is verified with a real production build before submission.
+
+Cost Considerations
+
+The project was designed with the assignment's target cost in mind.
+
+Sarvam Voice Agents pricing is currently approximately:
+
+₹3.50 / minute
+
+This includes the voice-agent platform capabilities required for the experience.
+
+The actual final cost can depend on the specific account/plan, call duration, telephony charges and deployment configuration.
+
+The expected conversation is approximately:
+
+60–90 seconds
+
+which keeps the voice-agent component within the assignment's intended cost range.
+
+For a production deployment, telephony and infrastructure costs should be measured alongside the voice-agent cost to calculate the complete cost per qualified lead.
+
+Alternatives Considered
+Generic STT + LLM + TTS Pipeline
+
+A custom pipeline could use:
+
+Telephony
+   ↓
+STT
+   ↓
+LLM
+   ↓
+TTS
+   ↓
+Telephony
+
+This provides maximum control but introduces significant engineering overhead around:
+
+Streaming audio
+Turn detection
+Barge-in
+Conversation state
+Latency
+Indian-language quality
+Code switching
+Telephony codecs
+Error handling
+Realtime orchestration
+
+For this project, the main differentiator is Indian conversational voice quality rather than building every layer from scratch.
+
+Therefore, an integrated voice-agent platform was preferred.
+
+Browser-Based Voice Chat
+
+A browser voice assistant would avoid telephony complexity.
+
+However, the assignment specifically asks for an AI call after the customer shares their phone number.
+
+Therefore, browser-only voice interaction would not satisfy the central product experience.
+
+Why This Architecture?
+
+The architecture optimizes for the actual business workflow:
+
+Lead capture
+    +
+Immediate contact
+    +
+Natural qualification
+    +
+Structured extraction
+    +
+Sales-ready information
+
+Rather than building an isolated AI chatbot, this implementation connects the AI directly to a lead-generation workflow.
+
+The AI therefore becomes an operational component of the business process.
+
+Reliability Improvements Implemented During Development
+
+The implementation went through several integration/debugging iterations.
+
+Important reliability issues addressed included:
+
+Public webhook routing
+
+The local backend initially needed a publicly reachable endpoint for Sarvam/Exotel callbacks.
+
+The ngrok tunnel was correctly pointed at:
+
+127.0.0.1:8000
+
+instead of relying on an inconsistent localhost route.
+
+This allowed external callbacks to reliably reach FastAPI.
+
+Sarvam variable mapping
+
+The output variables were explicitly mapped into the on-end API tool as agent variables rather than fixed literal values.
+
+The final mapping is:
+
+project_type
+timeline
+preferred_language
+meeting_requested
+
+This allows the values generated during the actual conversation to reach the backend.
+
+Boolean handling
+
+The voice platform may provide boolean-like values as strings.
+
+The backend therefore normalizes these values before storing them.
+
+This ensures:
+
+"true"
+
+is treated as:
+
+true
+
+rather than incorrectly becoming:
+
+false
+Exotel callback handling
+
+The backend accepts the relevant Exotel callback fields and maps telephony statuses into application-level states.
+
+Recording URLs are also captured when supplied.
+
+Testing and Validation
+
+The project was tested end-to-end rather than only checking that the frontend rendered.
+
+The final successful live flow demonstrated:
+
+Website submission
+       ↓
+POST /api/leads
+       ↓
+Exotel outbound call
+       ↓
+Sarvam conversation
+       ↓
+Hinglish interaction
+       ↓
+Project requirement extraction
+       ↓
+Timeline extraction
+       ↓
+Language detection
+       ↓
+Designer meeting decision
+       ↓
+Sarvam save-lead callback
+       ↓
+FastAPI webhook
+       ↓
+SQLite update
+       ↓
+Dashboard display
+
+A real successful conversation produced structured information equivalent to:
+
+Project:
+living room and kitchen renovation
+
+Timeline:
+two-three months later
+
+Language:
+hinglish
+
+Designer meeting:
+requested
+
+Lead status:
+qualified
+
+Call status:
+completed
+
+This validates the complete integration rather than only individual components.
+
+Frontend Production Validation
+
+The Next.js production build was successfully executed using:
+
+npm run build
+
+The final build completed successfully with:
+
+✓ Compiled successfully
+✓ Finished TypeScript
+✓ Collecting page data
+✓ Generating static pages
+✓ Finalizing page optimization
+
+Routes verified:
+
+/
+ /_not-found
+/dashboard
+
+This confirms that the frontend compiles successfully as a production application.
+
+Git and Version Control
+
+The project is maintained using Git and GitHub.
+
+Repository:
+
+yxshas565/sunrise-ai-voice-agent
+
+The final working implementation was committed and pushed to the main branch.
+
+The repository was verified to have:
+
+working tree clean
+
+and the latest remote branch is synchronized with the local main branch.
+
+Temporary development helper files were also removed before the final checkpoint.
+
 Project Structure
 sunrise-ai-voice-agent/
+│
 ├── apps/
+│   │
 │   ├── api/
 │   │   ├── app/
 │   │   │   ├── api/
-│   │   │   ├── services/
-│   │   │   └── main.py
-│   │   └── pyproject.toml
+│   │   │   │   ├── dashboard.py
+│   │   │   │   ├── leads.py
+│   │   │   │   ├── schemas.py
+│   │   │   │   └── voice.py
+│   │   │   │
+│   │   │   └── services/
+│   │   │       └── lead_service.py
+│   │   │
+│   │   ├── main.py
+│   │   ├── pyproject.toml
+│   │   └── .env.example
 │   │
 │   └── web/
 │       ├── app/
 │       │   ├── dashboard/
-│       │   └── page.tsx
-│       └── package.json
+│       │   ├── page.tsx
+│       │   └── ...
+│       ├── package.json
+│       └── ...
 │
-├── .env.example
 ├── .gitignore
-├── package.json
-├── pnpm-workspace.yaml
-└── README.md
+├── README.md
+└── ...
+API Responsibilities
+apps/api/app/api/leads.py
+    Lead creation and retrieval
 
+apps/api/app/api/voice.py
+    Voice-agent webhook
+    Exotel callback
+    Outbound call orchestration
+
+apps/api/app/api/dashboard.py
+    Dashboard data endpoints
+
+apps/api/app/services/lead_service.py
+    Lead persistence and updates
+
+apps/api/main.py
+    FastAPI application
+    CORS
+    Router registration
+    Health endpoint
+Frontend Responsibilities
+apps/web/app/page.tsx
+    Customer-facing landing page
+    Phone capture
+    Calling experience
+
+apps/web/app/dashboard/
+    Lead dashboard
+
+The frontend communicates with the FastAPI backend rather than directly exposing telephony credentials.
+
+Environment Variables
+
+A production/development environment requires values equivalent to:
+
+EXOTEL_ACCOUNT_SID=
+EXOTEL_API_KEY=
+EXOTEL_API_TOKEN=
+EXOTEL_SUBDOMAIN=https://api.in.exotel.com
+EXOTEL_CALLER_ID=
+EXOTEL_APP_ID=
+PUBLIC_API_URL=
+
+Secrets should only exist in the runtime environment and must never be committed to Git.
+
+Production Deployment Path
+
+The current project can be evolved from local prototype to production deployment.
+
+A production architecture could become:
+
+                    Internet
+                       │
+                       ▼
+              ┌─────────────────┐
+              │ Next.js Hosting │
+              └────────┬────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │ FastAPI Service │
+              │ HTTPS           │
+              └────────┬────────┘
+                       │
+              ┌────────┴─────────┐
+              ▼                  ▼
+         PostgreSQL          Exotel
+              │                  │
+              │                  ▼
+              │             Sarvam AI
+              │
+              ▼
+         Lead Dashboard
+
+For a larger production deployment, recommended upgrades would include:
+
+PostgreSQL instead of SQLite
+Managed backend hosting
+Permanent HTTPS webhook endpoints
+Centralized structured logging
+Authentication for the dashboard
+Rate limiting
+Monitoring and alerting
+Secret management
+Automated tests
+CI/CD
+Database backups
+Retry/idempotency handling for webhooks
+Production analytics
+Role-based dashboard access
+
+These are deployment-scale improvements rather than requirements for the assignment's local demonstration.
+
+Future Improvements
+
+Potential next-stage improvements include:
+
+Conversation Transcript
+
+Store the complete transcript alongside structured lead fields.
+
+This would allow sales teams to review exactly what the customer said.
+
+CRM Integration
+
+The current SQLite lead layer could be replaced or extended with:
+
+Salesforce
+HubSpot
+Zoho
+Custom CRM
+Internal sales systems
+
+The same extracted variables could then be pushed directly into the CRM.
+
+Calendar Integration
+
+A designer consultation could automatically create a calendar event after the customer selects an available time.
+
+Follow-up Automation
+
+If a customer is interested but does not schedule a meeting, the system could automatically initiate a follow-up workflow.
+
+Analytics
+
+Future analytics could measure:
+
+Calls initiated
+Calls answered
+Average call duration
+Qualified leads
+Designer meeting requests
+Conversion rate
+Language distribution
+No-answer rate
+Human Handoff
+
+The agent could transfer high-intent customers directly to a human sales/design representative when appropriate.
+
+Design Philosophy
+
+This project deliberately avoids treating voice AI as "just another chatbot."
+
+The important output is not the generated audio.
+
+The important output is:
+
+A real customer conversation
+          ↓
+Useful understanding of customer intent
+          ↓
+Structured lead information
+          ↓
+Actionable business workflow
+
+The voice layer is therefore treated as the interface between the customer and the business's lead qualification process.
+
+Demo
+
+The recommended demonstration flow is:
+
+1. Open Sunrise Interiors website
+2. Enter a customer phone number
+3. Submit the enquiry
+4. Receive the live outbound call
+5. Have a natural English/Hindi/Hinglish conversation
+6. Answer project and timeline questions
+7. Accept or decline a designer consultation
+8. Open the dashboard
+9. Show the automatically extracted lead
+
+The most important part of the demo is the live phone interaction.
+
+Assignment Requirements Coverage
+Requirement	Implementation
+Website / local host	Next.js
+Phone number capture	Implemented
+Immediate AI call	Exotel outbound call
+Sunrise Interiors introduction	Implemented
+Good-time check	Implemented
+Ask interior work required	Implemented
+Ask project timeline	Implemented
+Offer designer meeting	Implemented
+Confirm meeting interest	Implemented
+Natural responses	Implemented
+Interruptions	Enabled
+Questions / conversational variation	Supported by voice-agent design
+Polite not-interested flow	Implemented
+60–90 second target	Agent configured for concise conversations
+English	Supported
+Hindi	Supported
+Hinglish	Supported
+Natural Indian voice	Sarvam voice configuration
+Low latency	Realtime voice-agent architecture
+Lead extraction	Implemented
+Meeting qualification	Implemented
+Dashboard	Implemented
+Transcript	Future enhancement
+Production-style architecture	Implemented as prototype architecture
+Final Result
+
+The completed system demonstrates a complete AI-powered lead qualification loop:
+
+┌─────────────────────────────────────────────┐
+│                                             │
+│          SUNRISE INTERIORS WEBSITE          │
+│                                             │
+│        Customer submits phone number        │
+│                     │                       │
+└─────────────────────┼───────────────────────┘
+                      │
+                      ▼
+             ┌────────────────┐
+             │    FASTAPI     │
+             │ Lead Creation  │
+             └───────┬────────┘
+                     │
+                     ▼
+             ┌────────────────┐
+             │    EXOTEL      │
+             │   Phone Call   │
+             └───────┬────────┘
+                     │
+                     ▼
+             ┌────────────────┐
+             │    SARVAM      │
+             │ Voice Agent    │
+             └───────┬────────┘
+                     │
+              Natural conversation
+                     │
+                     ▼
+          ┌────────────────────────┐
+          │ Structured Extraction  │
+          │                        │
+          │ Project                │
+          │ Timeline               │
+          │ Language               │
+          │ Meeting Interest       │
+          └───────────┬────────────┘
+                      │
+                      ▼
+             ┌────────────────┐
+             │ FastAPI Webhook│
+             └───────┬────────┘
+                     │
+                     ▼
+             ┌────────────────┐
+             │     SQLite     │
+             │  Lead Storage  │
+             └───────┬────────┘
+                     │
+                     ▼
+             ┌────────────────┐
+             │   Dashboard    │
+             │                │
+             │ Qualified Lead │
+             │ Requirements   │
+             │ Timeline       │
+             │ Language       │
+             │ Meeting Status │
+             └────────────────┘
+
+The result is an end-to-end conversational AI system that transforms a simple phone-number submission into an immediate human-like voice interaction and a structured, actionable interior-design lead.
+
+Built For
+
+Sunrise Interiors — Live Voice Agent Demo
+
+Built as an end-to-end conversational AI voice solution focused on:
+
+Natural Indian voice interaction
+English / Hindi / Hinglish conversations
+Immediate lead engagement
+Automated qualification
+Structured lead extraction
+Designer-meeting conversion
+Operational dashboard visibility
+Production-oriented backend architecture
+
+### One correction before you paste
+
+Because this README is meant to be **production-grade**, I intentionally separated **"implemented now"** from **"future production upgrades"**. That is much stronger than pretending SQLite/local ngrok/auth/etc. are already enterprise production infrastructure.
+
+And **do not add anything else to the code just because the README mentions future improvements**. Those are explicitly future deployment enhancements.
+
+Your current state is already:
+
+**implemented → live-tested → build-tested → GitHub-pushed → clean working tree.**
